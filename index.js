@@ -9,16 +9,16 @@
  */
 
 function onInstallation(bot, installer) {
-    if (installer) {
-        bot.startPrivateConversation({user: installer}, function (err, convo) {
-            if (err) {
-                console.log(err);
-            } else {
-                convo.say('I am a bot that has just joined your team');
-                convo.say('You must now /invite me to a channel so that I can be of use!');
-            }
-        });
-    }
+  if (installer) {
+    bot.startPrivateConversation({user: installer}, function (err, convo) {
+      if (err) {
+        console.log(err);
+      } else {
+        convo.say('I am a bot that has just joined your team');
+        convo.say('You must now /invite me to a channel so that I can be of use!');
+      }
+    });
+  }
 }
 
 
@@ -28,14 +28,14 @@ function onInstallation(bot, installer) {
 
 var config = {};
 if (process.env.MONGOLAB_URI) {
-    var BotkitStorage = require('botkit-storage-mongo');
-    config = {
-        storage: BotkitStorage({mongoUri: process.env.MONGOLAB_URI}),
-    };
+  var BotkitStorage = require('botkit-storage-mongo');
+  config = {
+    storage: BotkitStorage({mongoUri: process.env.MONGOLAB_URI}),
+  };
 } else {
-    config = {
-        json_file_store: ((process.env.TOKEN)?'./db_slack_bot_ci/':'./db_slack_bot_a/'), //use a different name if an app or CI
-    };
+  config = {
+    json_file_store: ((process.env.TOKEN)?'./db_slack_bot_ci/':'./db_slack_bot_a/'), //use a different name if an app or CI
+  };
 }
 
 /**
@@ -43,18 +43,23 @@ if (process.env.MONGOLAB_URI) {
  */
 
 if (process.env.TOKEN || process.env.SLACK_TOKEN) {
-    //Treat this as a custom integration
-    var customIntegration = require('./lib/custom_integrations');
-    var token = (process.env.TOKEN) ? process.env.TOKEN : process.env.SLACK_TOKEN;
-    var controller = customIntegration.configure(token, config, onInstallation);
+  //Treat this as a custom integration
+  var customIntegration = require('./lib/custom_integrations');
+  var token = (process.env.TOKEN) ? process.env.TOKEN : process.env.SLACK_TOKEN;
+  var controller = customIntegration.configure(token, config, onInstallation);
 } else if (process.env.CLIENT_ID && process.env.CLIENT_SECRET && process.env.PORT) {
-    //Treat this as an app
-    var app = require('./lib/apps');
-    var controller = app.configure(process.env.PORT, process.env.CLIENT_ID, process.env.CLIENT_SECRET, config, onInstallation);
+  //Treat this as an app
+  var app = require('./lib/apps');
+  var controller = app.configure(process.env.PORT, process.env.CLIENT_ID, process.env.CLIENT_SECRET, config, onInstallation);
 } else {
-    console.log('Error: If this is a custom integration, please specify TOKEN in the environment. If this is an app, please specify CLIENTID, CLIENTSECRET, and PORT in the environment');
-    process.exit(1);
+  console.log('Error: If this is a custom integration, please specify TOKEN in the environment. If this is an app, please specify CLIENTID, CLIENTSECRET, and PORT in the environment');
+  process.exit(1);
 }
+
+/**
+ * Require external libs here!
+ */
+ var fetch = require('node-fetch');
 
 
 /**
@@ -67,12 +72,12 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
  */
 // Handle events related to the websocket connection to Slack
 controller.on('rtm_open', function (bot) {
-    console.log('** The RTM api just connected!');
+  console.log('** The RTM api just connected!');
 });
 
 controller.on('rtm_close', function (bot) {
-    console.log('** The RTM api just closed');
-    // you may want to attempt to re-open
+  console.log('** The RTM api just closed');
+  // you may want to attempt to re-open
 });
 
 
@@ -82,12 +87,89 @@ controller.on('rtm_close', function (bot) {
 // BEGIN EDITING HERE!
 
 controller.on('bot_channel_join', function (bot, message) {
-    bot.reply(message, "I'm here!")
+  bot.reply(message, "I'm here!")
 });
 
 controller.hears('hello', 'direct_message', function (bot, message) {
-    bot.reply(message, 'Hello!');
+  bot.reply(message, 'Hello!');
 });
+
+controller.hears(["whats cooking?", "whats cooking", "what's cooking?", "what's cooking"],'direct_message,direct_mention,mention,message_received',function(bot, message) {
+  getOrders().then(function(orders) {
+    open_orders = orders.filter(isOpen);
+
+    if (open_orders.length) {
+      open_orders.forEach(function(order) {
+        bot.reply(message, toString(order))
+      })
+    } else {
+      bot.reply(message, 'nothing cooking, kitchen closed');
+    }
+  })
+});
+
+controller.hears(['([a-z]+) lunch'],'direct_message,direct_mention,mention,message_received',function(bot, message) {
+  var matches = message.text.match(/([a-z]+) lunch/i);
+  var cmd = matches[1];
+
+  getOrders().then(function(orders) {
+    open_orders = orders.filter(isOpen);
+
+    switch (cmd) {
+      case 'random':
+        if (open_orders.length) {
+          bot.reply(message, toString(randomOrder(open_orders)))
+        } else {
+          bot.reply(message, 'there are no open orders at the moment');
+          bot.reply(message, 'here is a random one you can try: ' + toString(randomOrder(orders)));
+        }
+        break;
+      case 'lucky':
+        return bot.reply(message, toString(randomOrder(orders)));
+    }
+  })
+});
+
+
+/**
+ * Helper functions goes here!
+ */
+function getOrders() {
+  var tenbis_orders_url = 'https://www.10bis.co.il/Restaurants/SearchRestaurants?deliveryMethod=Delivery&id=1603586&OrderBy=pool_sum';
+  return fetch(tenbis_orders_url).then(parseJSON)
+}
+
+function parseJSON(response) {
+  return response.json();
+}
+
+function toString(order) {
+  var tenbis_short_url = 'http://tinyurl.com/pqhkcbt/?ResId=';
+  var s = order.RestaurantName + " " + tenbis_short_url + order.RestaurantId;
+  if (isOpen(order)) {
+    s += " " + (parseSum(order.PoolSum)) + "₪";
+    if (!order.IsOverPoolMin) {
+      s += " (missing " + (getMissing(order)) + "₪)";
+    }
+  }
+  return s;
+}
+
+function isOpen(order) {
+  return order.PoolSum && (parseSum(order.PoolSum)) > 0;
+}
+
+function parseSum(value) {
+  return parseInt(value != null ? value.replace('₪ ', '') : 0);
+}
+
+function getMissing(order) {
+  return order.IsOverPoolMin ? 0 : parseSum(order.MinimumOrder) - parseSum(order.PoolSum)
+}
+
+function randomOrder(orders) {
+  return orders[Math.floor(Math.random()*orders.length)]
+}
 
 
 /**
