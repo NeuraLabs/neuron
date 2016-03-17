@@ -160,7 +160,7 @@ function isOpen(order) {
 }
 
 function parseSum(value) {
-  return parseInt(value != null ? value.replace('₪ ', '') : 0);
+  return parseInt(value != null ? value.replace('₪', '').trim() : 0);
 }
 
 function getMissing(order) {
