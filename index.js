@@ -136,7 +136,7 @@ controller.hears(['([a-z]+) lunch'],'direct_message,direct_mention,mention,messa
  */
 function getOrders() {
   var tenbis_orders_url = 'https://www.10bis.co.il/Restaurants/SearchRestaurants?deliveryMethod=Delivery&id=1603586&OrderBy=pool_sum';
-  return fetch(tenbis_orders_url).then(parseJSON)
+  return fetch(tenbis_orders_url, { compress: false }).then(parseJSON)
 }
 
 function parseJSON(response) {
