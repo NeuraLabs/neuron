@@ -94,7 +94,7 @@ controller.hears('hello', 'direct_message', function (bot, message) {
   bot.reply(message, 'Hello!');
 });
 
-controller.hears(["whats cooking?", "whats cooking", "what's cooking?", "what's cooking", "מה מתבשל", "מה יש לאכול", "מה יש לאכול?", "מה מוזמן"],'direct_message,direct_mention,mention,message_received',function(bot, message) {
+controller.hears(["whats cooking?", "whats cooking", "what's cooking?", "what's cooking", "מה מתבשל", "מה יש לאכול", "מה יש לאכול?", "מה מוזמן"],'direct_message,direct_mention,mention,message_received,ambient',function(bot, message) {
   getOrders().then(function(orders) {
     open_orders = orders.filter(isOpen);
 
@@ -108,7 +108,7 @@ controller.hears(["whats cooking?", "whats cooking", "what's cooking?", "what's 
   })
 });
 
-controller.hears(['([a-z]+) lunch'],'direct_message,direct_mention,mention,message_received',function(bot, message) {
+controller.hears(['([a-z]+) lunch'],'direct_message,direct_mention,mention,message_received,ambient',function(bot, message) {
   var matches = message.text.match(/([a-z]+) lunch/i);
   var cmd = matches[1];
 
