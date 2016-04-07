@@ -94,7 +94,7 @@ controller.hears('hello', 'direct_message', function (bot, message) {
   bot.reply(message, 'Hello!');
 });
 
-controller.hears(["whats cooking?", "whats cooking", "what's cooking?", "what's cooking"],'direct_message,direct_mention,mention,message_received',function(bot, message) {
+controller.hears(["whats cooking?", "whats cooking", "what's cooking?", "what's cooking", "מה מתבשל", "מה יש לאכול", "מה יש לאכול?", "מה מוזמן"],'direct_message,direct_mention,mention,message_received',function(bot, message) {
   getOrders().then(function(orders) {
     open_orders = orders.filter(isOpen);
 
