@@ -95,17 +95,27 @@ controller.hears('hello', 'direct_message', function (bot, message) {
 });
 
 controller.hears(["whats cooking?", "whats cooking", "what's cooking?", "what's cooking", "מה מתבשל", "מה יש לאכול", "מה יש לאכול?", "מה מוזמן"],'direct_message,direct_mention,mention,message_received,ambient',function(bot, message) {
-  getOrders().then(function(orders) {
-    open_orders = orders.filter(isOpen);
+  var current_date = new Date();
+  var hour = current_date.getHours();
+  if (hour <= 11 && hour >= 7) {
+    getOrders().then(function(orders) {
+      open_orders = orders.filter(isOpen);
 
-    if (open_orders.length) {
-      open_orders.forEach(function(order) {
-        bot.reply(message, toString(order))
-      })
+      if (open_orders.length) {
+        open_orders.forEach(function(order) {
+          bot.reply(message, toString(order))
+        })
+      } else {
+        bot.reply(message, 'nothing cooking, kitchen closed');
+      }
+    })
+  } else {
+    if (hour > 11) {
+      bot.reply(message, 'too late, company order ended at 11. :(');
     } else {
-      bot.reply(message, 'nothing cooking, kitchen closed');
+      bot.reply(message, 'really? now? isn\'t it too early to order food?');
     }
-  })
+  }
 });
 
 controller.hears(['([a-z]+) lunch'],'direct_message,direct_mention,mention,message_received,ambient',function(bot, message) {
