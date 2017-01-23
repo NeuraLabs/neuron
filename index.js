@@ -100,7 +100,6 @@ controller.hears(["whats cooking?", "whats cooking", "what's cooking?", "what's 
   if (hour <= 11 && hour >= 7) {
     getOrders().then(function(orders) {
       open_orders = orders.filter(isOpen);
-
       if (open_orders.length) {
         open_orders.forEach(function(order) {
           bot.reply(message, toString(order))
@@ -157,7 +156,7 @@ function toString(order) {
   var tenbis_short_url = 'http://tinyurl.com/pqhkcbt/?ResId=';
   var s = order.RestaurantName + " " + tenbis_short_url + order.RestaurantId;
   if (isOpen(order)) {
-    s += " " + (parseSum(order.PoolSum)) + "₪";
+    s += " " + order.PoolSumNumber + "₪";
     if (!order.IsOverPoolMin) {
       s += " (missing " + (getMissing(order)) + "₪)";
     }
@@ -166,7 +165,7 @@ function toString(order) {
 }
 
 function isOpen(order) {
-  return order.PoolSum && (parseSum(order.PoolSum)) > 0;
+  return order.PoolSumNumber > 0;
 }
 
 function parseSum(value) {
@@ -174,7 +173,7 @@ function parseSum(value) {
 }
 
 function getMissing(order) {
-  return order.IsOverPoolMin ? 0 : parseSum(order.MinimumOrder) - parseSum(order.PoolSum)
+  return order.IsOverPoolMin ? 0 : parseSum(order.MinimumOrder) - PoolSumNumber
 }
 
 function randomOrder(orders) {
