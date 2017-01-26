@@ -173,11 +173,11 @@ function parseSum(value) {
 }
 
 function getMissing(order) {
-  return order.IsOverPoolMin ? 0 : parseSum(order.MinimumOrder) - PoolSumNumber
+  return order.IsOverPoolMin ? 0 : parseSum(order.MinimumOrder) - PoolSumNumber;
 }
 
 function randomOrder(orders) {
-  return orders[Math.floor(Math.random()*orders.length)]
+  return orders[Math.floor(Math.random()*orders.length)];
 }
 
 
